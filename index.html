@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>台球杆专卖 - 模拟商城</title>
+  <style>
+    body { margin: 0; background: #f7f7f7; font-family: "微软雅黑", Arial, sans-serif; }
+    .container { max-width: 480px; margin: 0 auto; background: #fff; min-height: 100vh; }
+    .main-img { width: 100%; height: 260px; object-fit: contain; background: #fafafa; }
+    .thumbs { display: flex; gap: 8px; justify-content: center; margin: 8px 0; }
+    .thumbs img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #eee; cursor: pointer; }
+    .thumbs img.selected { border: 2px solid #ff3b30; }
+    .title { font-size: 20px; font-weight: bold; margin: 12px 16px 4px 16px; }
+    .price { color: #ff3b30; font-size: 22px; font-weight: bold; margin: 0 16px 8px 16px; }
+    .promo { color: #fff; background: #ff3b30; border-radius: 4px; padding: 2px 8px; font-size: 13px; margin-left: 16px; display: inline-block; }
+    .section { margin: 16px; background: #fafafa; border-radius: 10px; padding: 12px; }
+    .section-title { font-size: 15px; font-weight: bold; margin-bottom: 8px; }
+    .options { display: flex; gap: 10px; margin-bottom: 10px; }
+    .option { flex: 1; padding: 8px 0; border: 2px solid #eee; border-radius: 6px; text-align: center; cursor: pointer; background: #f7f7f7; transition: border 0.2s, color 0.2s, background 0.2s; font-size: 15px; user-select: none; }
+    .option.selected { border: 2px solid #ff3b30; background: #fff0f0; color: #ff3b30; font-weight: bold; }
+    .input-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .input-group input { flex: 1; padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 15px; outline: none; transition: border 0.2s; }
+    .input-group input:focus { border-color: #ff3b30; }
+    #ksid-feedback { min-width: 24px; font-size: 18px; }
+    .qty-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .qty-btn { width: 28px; height: 28px; border: 1.5px solid #ddd; background: #fff; border-radius: 50%; font-size: 18px; cursor: pointer; }
+    .qty-input { width: 40px; text-align: center; border: none; background: transparent; font-size: 16px; }
+    .order-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 15px; background: #fafafa; border-radius: 6px; overflow: hidden; }
+    .order-table th, .order-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #eee; }
+    .order-table th { color: #888; font-weight: normal; background: #f5f5f5; }
+    .order-table tr:last-child td { border-bottom: none; }
+    .footer { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; box-shadow: 0 -2px 8px #eee; padding: 12px 0 10px 0; z-index: 10; }
+    .buy-btn { width: 92%; margin: 0 4%; padding: 16px 0; background: linear-gradient(90deg, #ff5f43 0%, #ff3b30 100%); color: #fff; font-size: 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 8px #ffd6d6; transition: background 0.2s, opacity 0.2s; opacity: 0.7; }
+    .buy-btn.enabled { opacity: 1; }
+    .buy-btn:active { background: #d32f2f; }
+    .desc { color: #888; font-size: 14px; margin: 0 16px 8px 16px; }
+    .ksid-tip {
+      font-size: 14px;
+      margin-left: 8px;
+      transition: color 0.2s;
+    }
+    @media (max-width: 520px) { .container { border-radius: 0; } .footer { border-radius: 0; } }
+    /* 自定义弹窗样式 */
+    .custom-modal {
+      position: fixed;
+      left: 0; right: 0; top: 0; bottom: 0;
+      background: rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: modalFadeIn 0.3s;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px 28px 24px 28px;
+      box-shadow: 0 4px 24px #e0e0e0;
+      text-align: center;
+      min-width: 220px;
+      animation: popIn 0.4s cubic-bezier(.68,-0.55,.27,1.55);
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.7); opacity: 0; }
+      80% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    .modal-icon {
+      font-size: 48px;
+      color: #4caf50;
+      margin-bottom: 12px;
+      animation: iconBounce 0.7s;
+    }
+    @keyframes iconBounce {
+      0% { transform: scale(0.5); }
+      60% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #222;
+    }
+    .modal-desc {
+      font-size: 15px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="sakura.jpg" id="mainImg" class="main-img" alt="台球杆主图">
+    <div class="thumbs">
+      <img src="sakura.jpg" class="selected" data-idx="0" alt="樱花粉">
+      <img src="birch.jpg" data-idx="1" alt="北美枫木">
+      <img src="watermark.jpg" data-idx="2" alt="水标花纹">
+    </div>
+    <div class="title" id="prodTitle">樱花粉台球专用杆</div>
+    <div class="desc" id="prodDesc">手感细腻｜经久耐用｜防滑防汗</div>
+    <div class="section">
+      <div class="section-title">款式选择</div>
+      <div class="options" id="styleOptions">
+        <div class="option selected">樱花粉</div>
+        <div class="option">北美枫木</div>
+        <div class="option">水标花纹</div>
+      </div>
+      <div class="section-title">杆长选择</div>
+      <div class="options" id="lengthOptions">
+        <div class="option selected">140cm</div>
+        <div class="option">145cm</div>
+        <div class="option">150cm</div>
+      </div>
+      <div class="section-title">购买数量</div>
+      <div class="qty-group">
+        <button class="qty-btn" id="qtyMinus">-</button>
+        <input type="text" id="qtyInput" class="qty-input" value="1" readonly>
+        <button class="qty-btn" id="qtyPlus">+</button>
+      </div>
+      <div class="section-title">快手ID</div>
+      <div class="input-group">
+        <input type="text" id="ksid" placeholder="请输入您的快手ID" autocomplete="off">
+        <span id="ksid-feedback"></span>
+        <span id="ksid-tip" class="ksid-tip"></span>
+      </div>
+      <table class="order-table">
+        <tr><th>ID</th><th>配置</th><th>数量</th></tr>
+        <tr><td id="order-id">-</td><td id="order-config">-</td><td id="order-qty">1</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="footer">
+    <button class="buy-btn" id="buyBtn" disabled>立即发货</button>
+  </div>
+  <!-- 自定义弹窗 -->
+  <div id="customModal" class="custom-modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-icon">✔</div>
+      <div class="modal-title">下单成功！</div>
+      <div class="modal-desc">客服会尽快联系您，感谢您的信任！</div>
+    </div>
+  </div>
+  <script>
+    // 商品信息
+    const prodTitles = ["樱花粉台球专用杆", "北美枫木台球专用杆", "水标花纹台球专用杆"];
+    const prodDescs = [
+      "手感细腻｜经久耐用｜防滑防汗",
+      "北美硬枫木前肢｜专业品质｜顺滑手感",
+      "水标花纹工艺｜时尚外观｜耐磨耐用"
+    ];
+    const prodPrices = ["￥399.00", "￥499.00", "￥459.00"];
+    const prodImgs = ["sakura.jpg", "birch.jpg", "watermark.jpg"];
+
+    // 缩略图切换主图
+    const mainImg = document.getElementById('mainImg');
+    const thumbs = document.querySelectorAll('.thumbs img');
+    const prodTitle = document.getElementById('prodTitle');
+    const prodDesc = document.getElementById('prodDesc');
+    const prodPrice = document.getElementById('prodPrice');
+    thumbs.forEach((thumb, i) => {
+      thumb.onclick = () => {
+        thumbs.forEach(t => t.classList.remove('selected'));
+        thumb.classList.add('selected');
+        mainImg.src = prodImgs[i];
+        prodTitle.textContent = prodTitles[i];
+        prodDesc.textContent = prodDescs[i];
+        prodPrice.innerHTML = prodPrices[i] + ' <span class="promo">限时包邮</span>';
+        styleOptions.children[i].click();
+      }
+    });
+
+    // 款式与主图联动
+    const styleOptions = document.getElementById('styleOptions');
+    function setupOptions(id, callback) {
+      const options = document.getElementById(id).children;
+      for (let i = 0; i < options.length; i++) {
+        options[i].onclick = function() {
+          for (let o of options) o.classList.remove('selected');
+          this.classList.add('selected');
+          if (callback) callback(i);
+        }
+      }
+    }
+    setupOptions('styleOptions', function(i) {
+      thumbs[i].click();
+      updateOrderInfo();
+    });
+    setupOptions('lengthOptions', updateOrderInfo);
+
+    // 数量选择
+    const qtyInput = document.getElementById('qtyInput');
+    document.getElementById('qtyMinus').onclick = function() {
+      let v = parseInt(qtyInput.value);
+      if (v > 1) qtyInput.value = v - 1;
+      updateOrderInfo();
+    }
+    document.getElementById('qtyPlus').onclick = function() {
+      let v = parseInt(qtyInput.value);
+      qtyInput.value = v + 1;
+      updateOrderInfo();
+    }
+
+    // 快手ID输入与按钮联动
+    const ksidInput = document.getElementById('ksid');
+    const ksidFeedback = document.getElementById('ksid-feedback');
+    const ksidTip = document.getElementById('ksid-tip');
+    const buyBtn = document.getElementById('buyBtn');
+    const orderId = document.getElementById('order-id');
+    const orderConfig = document.getElementById('order-config');
+    const orderQty = document.getElementById('order-qty');
+    const orderStatus = document.getElementById('order-status');
+
+    function updateOrderInfo() {
+      const style = styleOptions.querySelector('.selected').innerText;
+      const length = document.getElementById('lengthOptions').querySelector('.selected').innerText;
+      orderConfig.textContent = style + ' ' + length;
+      orderId.textContent = ksidInput.value.trim() || '-';
+      orderQty.textContent = qtyInput.value;
+    }
+    ksidInput.addEventListener('input', function() {
+      const val = ksidInput.value.trim();
+      updateOrderInfo();
+      if (val.length === 0) {
+        ksidFeedback.textContent = '';
+        ksidTip.textContent = '';
+        buyBtn.disabled = true;
+        buyBtn.classList.remove('enabled');
+      } else {
+        ksidFeedback.textContent = '✔';
+        ksidFeedback.style.color = '#4caf50';
+        ksidTip.textContent = 'ID有效，可下单';
+        ksidTip.style.color = '#4caf50';
+        buyBtn.disabled = false;
+        buyBtn.classList.add('enabled');
+        orderStatus.textContent = '待发货';
+      }
+    });
+
+    const customModal = document.getElementById('customModal');
+    function showModal() {
+      customModal.style.display = 'flex';
+      setTimeout(() => {
+        customModal.style.display = 'none';
+      }, 2000);
+    }
+
+    buyBtn.onclick = function() {
+      if (buyBtn.disabled) return;
+      buyBtn.textContent = "下单中...";
+      buyBtn.disabled = true;
+      setTimeout(function() {
+        buyBtn.textContent = "立即发货";
+        buyBtn.disabled = false;
+        showModal();
+      }, 300);
+    };
+    // 初始化订单信息
+    updateOrderInfo();
+  </script>
+</body>
+</html> 
